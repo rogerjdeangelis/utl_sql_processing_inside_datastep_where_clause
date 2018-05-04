@@ -2,6 +2,10 @@
 Sql processing inside datastep where clause.  Keywords: sas sql join merge big data analytics macros oracle teradata mysql sas communities stackoverflow statistics artificial inteligence AI Python R Java Javascript WPS Matlab SPSS Scala Perl C C# Excel MS Access JSON graphics maps NLP natural language processing machine learning igraph DOSUBL DOW loop stackoverflow SAS community.
     SQL processing inside datastep where clause
 
+    see the nice recently added SQL solution by 
+    Bartosz Jabłoński
+    yabwon@gmail.com
+
     github
     https://github.com/rogerjdeangelis/utl_sql_processing_inside_datastep_where_clause
 
@@ -57,3 +61,71 @@ Sql processing inside datastep where clause.  Keywords: sas sql join merge big d
       9    Robert      M      12     64.8      128.0
      10    Thomas      M      11     57.5       85.0
     */
+  
+  
+  
+  Bartosz Jabłoński
+Bartosz Jabłoński's profile photo
+yabwon@gmail.com
+    
+    
+    Hi Roger,
+
+I know it looks like I'm singing "the same old song", but I can't resist, sorry. :-) 
+
+Why not to use: "Example 2: using an sql select statement as input to a data step" 
+(end of page 5/ beginning of page 6) from "Use the Full Power of SAS in Your Function-Style Macros" by Mike Rhoads: https://support.sas.com/resources/papers/proceedings12/004-2012.pdf
+
+all the best 
+Bart
+
+/*
+%MACRO GetSQL() / PARMBUFF; 
+ %let SYSPBUFF = %superq(SYSPBUFF); 
+ %let SYSPBUFF = %substr(&SYSPBUFF,2,%LENGTH(&SYSPBUFF) - 2);
+ %let SYSPBUFF = %superq(SYSPBUFF); 
+ %let SYSPBUFF = %sysfunc(quote(&SYSPBUFF)); 
+
+ %local UNIQUE_INDEX; 
+   %let UNIQUE_INDEX = &SYSINDEX;
+ %sysfunc(GetSQL(&UNIQUE_INDEX,&SYSPBUFF))
+%MEND GetSQL;
+
+options cmplib = _null_;
+proc fcmp outlib=work.fun.test;
+  function GetSQL(unique_index_2, query $) $ 41;
+
+    length query query_arg $ 32000 viewname $ 41;
+    query_arg = dequote(query);
+    rc = RUN_MACRO('GetSQL_Inner', unique_index_2, query_arg, viewname);
+    if rc = 0 then return(trim(viewname));
+              else do;
+                   return(" ");
+                   put 'ERROR:[GetSQL] Problem with the function';
+                   end;
+  endsub;
+run;
+
+%MACRO GetSQL_Inner();
+ %local query;
+  %let query = %superq(query_arg); 
+  %let query = %sysfunc(dequote(&query));
+  %let viewname = GetSQL_tmpview_&UNIQUE_INDEX_2;
+   proc sql;
+    create view &viewname as &query;
+   quit;
+%MEND GetSQL_Inner; 
+
+
+
+options cmplib = work.fun;
+
+data example;
+set 
+%GetSQL(
+select c.* from sashelp.class as c where c.age < (select median(age) from sashelp.class)
+)
+;
+run; 
+*/
+
