@@ -1,6 +1,8 @@
 # utl_sql_processing_inside_datastep_where_clause
 Sql processing inside datastep where clause.  Keywords: sas sql join merge big data analytics macros oracle teradata mysql sas communities stackoverflow statistics artificial inteligence AI Python R Java Javascript WPS Matlab SPSS Scala Perl C C# Excel MS Access JSON graphics maps NLP natural language processing machine learning igraph DOSUBL DOW loop stackoverflow SAS community.
     SQL processing inside datastep where clause
+    
+    see recently added solution by Quentin McMullen via listserv.uga.edu
 
     see the nice recently added SQL solution by 
     Bartosz Jabłoński
@@ -128,4 +130,50 @@ select c.* from sashelp.class as c where c.age < (select median(age) from sashel
 ;
 run; 
 */
+
+
+
+Quentin McMullen via listserv.uga.edu
+6:09 PM (15 hours ago)
+to SAS-L
+Hi Bart et al.,
+
+Mike's Macro Function Sandwich paper is amazing, and it blew my mind when I read it
+the first time.  But remember that when he came up with that nifty approach, there
+was no DOSUBL. My vague memory is that when I emailed Mike a year or so after he
+wrote it, to praise his paper and ask some follow-up questions, by then Rick Langston
+had already given us an early DOSUBL, and Mike kin
+dly pointed me in that direction since it makes life much easier.  See last example
+from Rick's paper (https://www.lexjansen.com/nesug/nesug13/139_Final_Paper.pdf),
+where he gives a DOSUBL approach to %ExpandVarList and compare that to Mike's MFS %ExpandVarList.
+
+That said, the general approach Mike used in the MFS %GetSQL  is "function-style
+macro that takes query as parameter, invokes a side-session to create a view of
+that query, and returns the name of the view created."  It works fine with DOSUBL,
+and much less code than the MFS approach:
+
+%macro DoSublGetSQL(query);
+  %local rc myview;
+  %let myview=GetSQL_tmpview_&sysindex;
+
+  %let rc=%sysfunc(dosubl(%nrstr(
+     proc sql;
+      create view &myview as &query;
+     quit;
+  )));
+
+  &myview /*return the name of the view*/
+%mend ;
+
+Use like:
+
+541  data example;
+542    set %DoSublGetSql(select c.* from sashelp.class as c
+543    where c.age < (select median(age) from sashelp.class));
+MPRINT(DOSUBLGETSQL):   GetSQL_tmpview_55
+543  run;
+
+
+Kind Regards,
+--Q.
 
